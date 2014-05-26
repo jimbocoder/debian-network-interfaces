@@ -1,0 +1,42 @@
+#!/usr/bin/env php
+<?php
+require_once dirname(__DIR__) . '/vendor/autoload.php';
+
+use jimbocoder\DebianNetworkInterfaces\Parser;
+
+if ( $_SERVER['argv'][1] ) {
+	$interfaces = $_SERVER['argv'][1];
+} else {
+	$interfaces = "/etc/network/interfaces";
+}
+
+// Prepare a temp file and be quite sure to delete it when we're done.
+$tmpfile = tempnam("/tmp", "interfaces-");
+register_shutdown_function(function() use($tmpfile) {
+    unlink($tmpfile);
+});
+
+// Some relative paths may be referenced in the interfaces file, and they should be resolved relative to it.
+// So we chdir() to make that simple.
+$cwd = getcwd(); // (pushd)
+chdir(dirname($interfaces));
+
+// Parse $interfaces out to the temp file.
+file_put_contents($tmpfile, Parser::parse(file_get_contents($interfaces)));
+chdir($cwd); // (popd)
+
+// Read any options from stdin.. what a mess..
+$stdin = fopen("php://stdin", "r");
+stream_set_blocking($stdin, 0);
+$options = fread($stdin, 16384);
+
+// Put together a command which:
+// a) uses the options from stdin
+// b) uses our parsed version of the $interfaces file ($tmpfile)
+$cmd = <<<CMD
+cat <<OPTIONS | /usr/sbin/guessnet-ifupdown -C $tmpfile
+$options
+OPTIONS
+CMD;
+
+print shell_exec($cmd);

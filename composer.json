@@ -1,0 +1,18 @@
+{
+    "name": "jimbocoder/debian-network-interfaces",
+    "description": "Parse debian-style /etc/network directory contents",
+    "authors": [
+        {
+            "name": "Jim Howell",
+            "email": "jimbocoder@gmail.com"
+        }
+    ],
+    "require": {
+
+    },
+    "autoload": {
+	"classmap": [
+		"lib/"
+	]
+    }
+}
