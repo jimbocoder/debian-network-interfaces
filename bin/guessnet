@@ -4,11 +4,15 @@ require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 use jimbocoder\DebianNetworkInterfaces\Parser;
 
-if ( $_SERVER['argv'][1] ) {
-	$interfaces = $_SERVER['argv'][1];
-} else {
-	$interfaces = "/etc/network/interfaces";
-}
+// We don't do anything with the command line args, but be sure to
+// pass them along to the real guessnet-ifupdown binary, if any
+// exist.
+$passthruArgs =
+    count($_SERVER['argv']) > 1
+    ? implode(" ", array_slice($_SERVER['argv'],1))
+    : "";
+
+$interfaces = "/etc/network/interfaces";
 
 // Prepare a temp file and be quite sure to delete it when we're done.
 $tmpfile = tempnam("/tmp", "interfaces-");
@@ -34,7 +38,7 @@ $options = fread($stdin, 16384);
 // a) uses the options from stdin
 // b) uses our parsed version of the $interfaces file ($tmpfile)
 $cmd = <<<CMD
-cat <<OPTIONS | /usr/sbin/guessnet-ifupdown -C $tmpfile
+cat <<OPTIONS | /usr/sbin/guessnet-ifupdown -C $tmpfile $passthruArgs
 $options
 OPTIONS
 CMD;
